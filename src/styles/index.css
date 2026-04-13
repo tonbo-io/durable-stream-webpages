@@ -11,6 +11,7 @@
   --bg-elevated: #282828;
   --bg-accent: #458588;
   --bg-accent-light: #83a598;
+  --bg-accent-dark: #076678;
   --border-muted: #504945;
   --text-primary: #f9f5d7;
   --text-secondary: #d5c4a1;
@@ -22,6 +23,11 @@
   --page-max-width: 1312px;
   --header-max-width: 984px;
   --header-height: 45px;
+  --font-mono:
+    "Iosevka",
+    "SFMono-Regular",
+    "Consolas",
+    monospace;
 }
 
 * {
@@ -101,6 +107,11 @@ button {
   white-space: nowrap;
 }
 
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+}
+
 .brand-primary {
   color: var(--brand-warm);
 }
@@ -115,15 +126,36 @@ button {
   justify-content: flex-start;
 }
 
-.nav-links a {
+.nav-link {
+  align-items: center;
   color: var(--text-secondary);
+  display: inline-flex;
   font-size: 16px;
+  gap: 6px;
   transition: color 160ms ease;
 }
 
-.nav-links a:hover,
-.nav-links a:focus-visible {
+.nav-link:hover,
+.nav-link:focus-visible {
   color: var(--text-primary);
+}
+
+.nav-link-active {
+  color: var(--text-primary);
+}
+
+.nav-link-disabled {
+  cursor: default;
+  opacity: 0.88;
+}
+
+.nav-caret {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  display: inline-flex;
+  height: 0;
+  width: 0;
 }
 
 .header-actions {
@@ -201,6 +233,37 @@ button {
   min-height: 28px;
   min-width: 135px;
   padding-block: 4px;
+}
+
+.button-header-terminal {
+  border-bottom-color: var(--bg-accent-dark);
+  border-right-color: var(--bg-accent-dark);
+  border-radius: 1px;
+  font-family: var(--font-mono);
+  min-width: 118px;
+}
+
+.button-terminal {
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 8px 24px;
+}
+
+.button-terminal-primary {
+  background: var(--bg-accent);
+  border-bottom: 2px solid var(--bg-accent-dark);
+  border-right: 2px solid var(--bg-accent-dark);
+  color: var(--bg-base);
+}
+
+.button-terminal-secondary {
+  background: transparent;
+  border-bottom: 2px solid var(--border-muted);
+  border-right: 2px solid var(--border-muted);
+  color: var(--bg-accent-light);
 }
 
 .hero-section {
@@ -685,6 +748,180 @@ button {
   text-align: left;
 }
 
+.pricing-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 24px 56px;
+}
+
+.pricing-shell {
+  margin: 0 auto;
+  max-width: var(--page-max-width);
+  padding-inline: clamp(24px, 10vw, 128px);
+  width: 100%;
+}
+
+.pricing-hero-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-inline: clamp(24px, 12vw, 160px);
+  padding-top: 32px;
+}
+
+.pricing-hero-shell h1 {
+  color: var(--text-primary);
+  font-size: clamp(40px, 4vw, 56px);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 1.08;
+  margin: 0;
+  max-width: 720px;
+}
+
+.pricing-intro-list,
+.pricing-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pricing-intro-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+}
+
+.pricing-intro-list li,
+.pricing-feature-list li {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+}
+
+.pricing-intro-list img,
+.pricing-feature-list img {
+  display: block;
+  flex: none;
+  height: 16px;
+  margin-top: 3px;
+  width: 16px;
+}
+
+.pricing-intro-list span {
+  color: var(--text-warm-muted);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.pricing-hero-cta {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding-inline: 32px;
+}
+
+.pricing-plans-section {
+  padding-inline: 0;
+  padding-top: 80px;
+}
+
+.pricing-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  padding-inline: calc(clamp(24px, 10vw, 128px) + 32px);
+}
+
+.pricing-plan-card {
+  display: grid;
+  gap: clamp(48px, 8vw, 160px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 32px;
+}
+
+.pricing-plan-summary {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pricing-plan-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pricing-plan-copy h2 {
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.pricing-plan-copy p {
+  color: var(--text-warm-muted);
+  font-size: 16px;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 340px;
+}
+
+.pricing-rate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 48px 0 0;
+  padding: 0 0 64px;
+}
+
+.pricing-rate-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.pricing-rate-row dt {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.pricing-rate-row dd {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 1.4;
+  margin: 0;
+  text-align: right;
+}
+
+.pricing-plan-cta {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-inline: 32px;
+}
+
+.pricing-plan-features {
+  border-top: 0.5px dashed var(--border-muted);
+  padding-top: 32px;
+}
+
+.pricing-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pricing-feature-list span {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
 .site-footer {
   align-items: center;
   border-top: 1px solid var(--border-muted);
@@ -751,6 +988,15 @@ button {
     grid-template-columns: 1fr;
     padding-inline: 0;
   }
+
+  .pricing-page {
+    padding-inline: 16px;
+  }
+
+  .pricing-plan-card {
+    grid-template-columns: 1fr;
+    padding-inline: 24px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -775,6 +1021,10 @@ button {
   .header-primary {
     flex-direction: column;
     gap: 16px;
+  }
+
+  .brand-link {
+    justify-content: center;
   }
 
   .hero-section {
@@ -828,5 +1078,42 @@ button {
 
   .sandbox-row {
     flex-wrap: wrap;
+  }
+
+  .pricing-page {
+    padding-top: 16px;
+  }
+
+  .pricing-shell {
+    padding-inline: 0;
+  }
+
+  .pricing-hero-shell {
+    gap: 20px;
+    padding-top: 12px;
+  }
+
+  .pricing-hero-shell h1 {
+    font-size: 40px;
+    max-width: none;
+  }
+
+  .pricing-plan-card {
+    gap: 32px;
+    padding: 16px 0;
+  }
+
+  .pricing-rate-list {
+    padding-bottom: 40px;
+  }
+
+  .pricing-rate-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .pricing-rate-row dd {
+    text-align: left;
   }
 }

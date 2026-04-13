@@ -1,21 +1,27 @@
-import Header from "./components/Header";
-import Hero from "./components/Hero";
-import DemoSection from "./components/DemoSection";
-import UseExamples from "./components/UseExamples";
-import Footer from "./components/Footer";
+import { useEffect, useState } from "react";
+import HomePage from "./pages/HomePage";
+import PricingPage from "./pages/PricingPage";
+import { getCurrentAppPath, PRICING_PATH } from "./utils/navigation";
 
 function App() {
-  return (
-    <div className="page-shell">
-      <Header />
-      <main className="page-content">
-        <Hero />
-        <DemoSection />
-        <UseExamples />
-      </main>
-      <Footer />
-    </div>
-  );
+  const [currentPath, setCurrentPath] = useState(() => getCurrentAppPath());
+
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setCurrentPath(getCurrentAppPath());
+    };
+
+    window.addEventListener("popstate", handleRouteChange);
+    return () => {
+      window.removeEventListener("popstate", handleRouteChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.title = currentPath === PRICING_PATH ? "Pricing | Long Code" : "Long Code";
+  }, [currentPath]);
+
+  return <div className="page-shell">{currentPath === PRICING_PATH ? <PricingPage /> : <HomePage />}</div>;
 }
 
 export default App;
