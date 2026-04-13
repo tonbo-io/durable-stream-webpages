@@ -906,7 +906,14 @@ button {
 }
 
 .pricing-plan-features {
-  border-top: 0.5px dashed var(--border-muted);
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--border-muted) 0 4px,
+    transparent 4px 8px
+  );
+  background-position: top left;
+  background-repeat: repeat-x;
+  background-size: auto 1px;
   padding-top: 32px;
 }
 
