@@ -1,22 +1,115 @@
-export const ghostOutsideTheShellPost = {
-  title: "Ghost Outside the Shell",
-  summary:
-    "Our research teams investigate the safety, inner workings, and societal impacts of AI models – so that artificial intelligence has a positive impact as it becomes increasingly capable.",
-  subtitle: "Why the agent's session should outlive its container",
-  category: "Think Notes",
-  publishedAt: "April 13, 2026",
-  introParagraphs: [
-    "Every instance of Claude Opus is the same model. Same weights, same capabilities, same 'soul.' What makes your agent yours is not the model. It's the trajectory. The hours of tool calls, decisions, mistakes, and recoveries that turned a generic model into an agent that understands your codebase, remembers your last conversation, and knows what it tried an hour ago. That trajectory is the ghost. The container it runs in is the shell. And right now, for most agent systems, the ghost dies when the shell does.",
-    "Models get better fast. Really fast. Six months ago you were working around limited context windows, poor instruction following, and fragile tool use. Those problems just stop being problems. And the workarounds you built? They become dead weight.",
-    "This is the core challenge of building agent infrastructure right now: the ground is moving under your feet. If your architecture is built around today's model limitations, it'll be wrong in six months.",
-    "So the question becomes: what assumptions will still hold?",
-  ],
-  sectionTitle: "Build on assumptions that last",
-  sectionParagraphs: [
-    "Anthropic made this point well in their recent engineering post on managed agents. They drew an analogy to operating systems: the way OS abstractions like read() and write() outlasted every hardware generation underneath them. The interfaces stayed stable while implementations changed freely.",
-    "There's a deeper version of this lesson. In the early days of computing, there were two approaches to building a system. The Lisp Machine approach was to build the entire stack around one language, one paradigm, and optimize everything for that specific model of computation. The Unix approach was to build small, composable tools connected by stable interfaces. Pipes. Files. Processes.",
-    "Lisp Machines died out for many reasons. Cost, the AI winter, cheap commodity hardware. But one thing that kept Unix alive through decades of hardware revolutions is that its abstractions outlasted every implementation underneath them. The read() system call works the same whether you're accessing a 1970s disk pack or a modern NVMe SSD.",
-    "The same principle applies to agent harnesses. You need interfaces that are stable even as models change. Which means you need to figure out which abstractions are fundamental and which are just workarounds for current limitations.",
-  ],
-  managedAgentsHref: "https://www.anthropic.com/engineering/managed-agents",
-} as const;
+type BlogFrontmatter = {
+  title: string;
+  slug: string;
+  date: string;
+  category: string;
+  summary: string;
+  subtitle?: string;
+  coverImage?: string;
+  coverAlt?: string;
+  featured?: boolean;
+};
+
+export type BlogPost = BlogFrontmatter & {
+  body: string;
+  publishedAt: string;
+};
+
+const markdownModules = import.meta.glob("./posts/*.md", {
+  eager: true,
+  import: "default",
+  query: "?raw",
+}) as Record<string, string>;
+
+function formatBlogDate(date: string) {
+  const normalizedDate = new Date(`${date}T00:00:00`);
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(normalizedDate);
+}
+
+function parseFrontmatterValue(value: string) {
+  const trimmedValue = value.trim();
+
+  if (trimmedValue === "true") {
+    return true;
+  }
+
+  if (trimmedValue === "false") {
+    return false;
+  }
+
+  return trimmedValue.replace(/^["']|["']$/g, "");
+}
+
+function parseMarkdownModule(rawMarkdown: string, path: string): BlogPost {
+  const match = rawMarkdown.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+
+  if (!match) {
+    throw new Error(`Missing frontmatter in blog markdown file: ${path}`);
+  }
+
+  const [, frontmatterBlock, body] = match;
+  const frontmatter = frontmatterBlock.split("\n").reduce<Record<string, string | boolean>>((acc, line) => {
+    const separatorIndex = line.indexOf(":");
+
+    if (separatorIndex === -1) {
+      return acc;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    const value = line.slice(separatorIndex + 1);
+    acc[key] = parseFrontmatterValue(value);
+    return acc;
+  }, {});
+
+  const filename = path.split("/").pop()?.replace(/\.md$/, "");
+
+  if (
+    typeof frontmatter.title !== "string" ||
+    typeof frontmatter.date !== "string" ||
+    typeof frontmatter.category !== "string" ||
+    typeof frontmatter.summary !== "string"
+  ) {
+    throw new Error(`Missing required blog frontmatter fields in: ${path}`);
+  }
+
+  const slug = typeof frontmatter.slug === "string" ? frontmatter.slug : filename;
+
+  if (!slug) {
+    throw new Error(`Unable to derive blog slug from: ${path}`);
+  }
+
+  return {
+    title: frontmatter.title,
+    slug,
+    date: frontmatter.date,
+    category: frontmatter.category,
+    summary: frontmatter.summary,
+    subtitle: typeof frontmatter.subtitle === "string" ? frontmatter.subtitle : undefined,
+    coverImage: typeof frontmatter.coverImage === "string" ? frontmatter.coverImage : undefined,
+    coverAlt: typeof frontmatter.coverAlt === "string" ? frontmatter.coverAlt : undefined,
+    featured: frontmatter.featured === true,
+    body: body.trim(),
+    publishedAt: formatBlogDate(frontmatter.date),
+  };
+}
+
+const blogPosts = Object.entries(markdownModules)
+  .map(([path, rawMarkdown]) => parseMarkdownModule(rawMarkdown, path))
+  .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+export function getAllBlogPosts() {
+  return blogPosts;
+}
+
+export function getFeaturedBlogPost() {
+  return blogPosts.find((post) => post.featured) ?? blogPosts[0];
+}
+
+export function getBlogPostBySlug(slug: string) {
+  return blogPosts.find((post) => post.slug === slug);
+}

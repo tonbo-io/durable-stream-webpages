@@ -1,7 +1,7 @@
 export const HOME_PATH = "/";
 export const PRICING_PATH = "/pricing";
 export const BLOG_PATH = "/blog";
-export const BLOG_GHOST_PATH = "/blog/ghost-outside-the-shell";
+export const BLOG_POST_PREFIX = "/blog/";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -23,11 +23,23 @@ export function getCurrentAppPath(pathname = window.location.pathname) {
     return BLOG_PATH;
   }
 
-  if (normalizedPath === BLOG_GHOST_PATH) {
-    return BLOG_GHOST_PATH;
+  if (normalizedPath.startsWith(BLOG_POST_PREFIX) && normalizedPath !== BLOG_PATH) {
+    return normalizedPath;
   }
 
   return HOME_PATH;
+}
+
+export function getBlogPostPath(slug: string) {
+  return `${BLOG_PATH}/${slug}`;
+}
+
+export function getBlogSlugFromPath(path: string) {
+  if (!path.startsWith(BLOG_POST_PREFIX) || path === BLOG_PATH) {
+    return null;
+  }
+
+  return path.slice(BLOG_POST_PREFIX.length) || null;
 }
 
 export function isInternalAppPath(path: string) {

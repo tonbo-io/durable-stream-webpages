@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { getBlogPostBySlug } from "./content/blog";
 import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import HomePage from "./pages/HomePage";
 import PricingPage from "./pages/PricingPage";
-import { BLOG_GHOST_PATH, BLOG_PATH, getCurrentAppPath, PRICING_PATH } from "./utils/navigation";
+import { BLOG_PATH, getBlogSlugFromPath, getCurrentAppPath, PRICING_PATH } from "./utils/navigation";
 
 function App() {
   const [currentPath, setCurrentPath] = useState(() => getCurrentAppPath());
+  const currentBlogSlug = getBlogSlugFromPath(currentPath);
+  const currentBlogPost = currentBlogSlug ? getBlogPostBySlug(currentBlogSlug) : undefined;
 
   useEffect(() => {
     const handleRouteChange = () => {
@@ -25,10 +28,10 @@ function App() {
         ? "Pricing | Long Code"
         : currentPath === BLOG_PATH
           ? "Blog | Long Code"
-          : currentPath === BLOG_GHOST_PATH
-            ? "Ghost Outside the Shell | Long Code"
+          : currentBlogPost
+            ? `${currentBlogPost.title} | Long Code`
             : "Long Code";
-  }, [currentPath]);
+  }, [currentBlogPost, currentPath]);
 
   return (
     <div className="page-shell">
@@ -36,8 +39,8 @@ function App() {
         <PricingPage />
       ) : currentPath === BLOG_PATH ? (
         <BlogPage />
-      ) : currentPath === BLOG_GHOST_PATH ? (
-        <BlogPostPage />
+      ) : currentBlogPost ? (
+        <BlogPostPage post={currentBlogPost} />
       ) : (
         <HomePage />
       )}
