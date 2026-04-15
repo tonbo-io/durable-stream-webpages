@@ -471,7 +471,7 @@ button {
 }
 
 .ingestion-grid {
-  align-items: center;
+  align-items: start;
   column-gap: 96px;
   display: grid;
   justify-items: start;
@@ -496,6 +496,7 @@ button {
   flex-direction: column;
   gap: 8px;
   max-width: none;
+  padding-top: 16px;
 }
 
 .ingestion-title p {
