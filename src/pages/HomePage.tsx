@@ -13,6 +13,7 @@ function HomePage() {
       <Header
         navItems={[
           { label: "Pricing", href: "/pricing" },
+          { label: "Docs", href: "/docs" },
           { label: "Blogs", href: "/blogs" },
           {
             label: "Projects",

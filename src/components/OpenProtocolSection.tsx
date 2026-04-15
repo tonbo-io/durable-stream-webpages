@@ -9,42 +9,68 @@ function OpenProtocolSection() {
       </div>
 
       <div className="protocol-card">
-        <pre className="protocol-code-block">
-          <code>
-            <span className="protocol-code-line">
-              <span className="code-token-method">POST</span>{" "}
-              <span className="code-token-path">/v1/sessions/{"{session_id}"}/events</span>{" "}
-              <span className="code-token-comment">HTTP/1.1</span>
-            </span>
-            <span className="protocol-code-line">
-              <span className="code-token-property">Content-Type</span>
-              <span className="code-token-plain">: application/json</span>
-            </span>
-            <span className="protocol-code-line">&nbsp;</span>
-            <span className="protocol-code-line">
-              <span className="code-token-brace">{"{"}</span>
-              <span className="code-token-string">"type"</span>
-              <span className="code-token-plain">: </span>
-              <span className="code-token-string">"tool_call"</span>
-              <span className="code-token-plain">, </span>
-              <span className="code-token-string">"name"</span>
-              <span className="code-token-plain">: </span>
-              <span className="code-token-string">"edit_file"</span>
-              <span className="code-token-plain">, </span>
-              <span className="code-token-string">"data"</span>
-              <span className="code-token-plain">: </span>
-              <span className="code-token-comment">{"{...}"}</span>
-              <span className="code-token-brace">{"}"}</span>
-            </span>
-            <span className="protocol-code-line">&nbsp;</span>
-            <span className="protocol-code-line">
-              <span className="code-token-success">HTTP/1.1 204 No Content</span>
-            </span>
-            <span className="protocol-code-line">
-              <span className="code-token-success">Stream-Next-Offset: 00000145</span>
-            </span>
-          </code>
-        </pre>
+        <div className="protocol-code-block">
+          <div className="protocol-code-line">
+            <span className="code-token-http-method">POST</span>
+            <span className="code-token-default"> /v1/sessions/{"{session_id}"}/events </span>
+            <span className="code-token-http-method">HTTP</span>
+            <span className="code-token-default">/</span>
+            <span className="code-token-number">1.1</span>
+          </div>
+
+          <div className="protocol-code-line">
+            <span className="code-token-header-name">Content-Type</span>
+            <span className="code-token-http-method">:</span>
+            <span className="code-token-header-value"> application/json</span>
+          </div>
+
+          <div className="protocol-code-line" aria-hidden="true">
+            {" "}
+          </div>
+
+          <div className="protocol-code-line">
+            <span className="code-token-punctuation">{"{ "}</span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-key">type</span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-punctuation">:</span>
+            <span className="code-token-punctuation"> "</span>
+            <span className="code-token-string">tool_call</span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-punctuation">, </span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-key">name</span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-punctuation">:</span>
+            <span className="code-token-punctuation"> "</span>
+            <span className="code-token-string">edit_file</span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-punctuation">, </span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-key">data</span>
+            <span className="code-token-punctuation">"</span>
+            <span className="code-token-punctuation">:</span>
+            <span className="code-token-punctuation"> {"{"}</span>
+            <span className="code-token-ellipsis">...</span>
+            <span className="code-token-punctuation">{"} }"}</span>
+          </div>
+
+          <div className="protocol-code-line" aria-hidden="true">
+            {" "}
+          </div>
+
+          <div className="protocol-code-line">
+            <span className="code-token-default">HTTP/</span>
+            <span className="code-token-number">1.1</span>
+            <span className="code-token-number"> 204</span>
+            <span className="code-token-default"> No Content</span>
+          </div>
+
+          <div className="protocol-code-line">
+            <span className="code-token-default">Stream-Next-Offset: </span>
+            <span className="code-token-number">00000145</span>
+          </div>
+        </div>
       </div>
     </section>
   );

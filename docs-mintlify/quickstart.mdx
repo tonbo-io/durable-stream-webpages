@@ -1,0 +1,164 @@
+---
+slug: quickstart
+title: Quickstart
+description: Append events, read them back, and tail new events live — in 5 minutes.
+group: Get started
+order: 2
+---
+
+In 5 minutes, you'll append events to a session, read them back, and tail new events live.
+
+## Prerequisites
+
+- A Durable Sessions API key — [book a call](https://cal.com/tzu-gwo/hi-from-tonbo) to get one during early access
+- `curl` or any HTTP client
+
+```bash
+export TONBO_API_KEY="your-api-key-here"
+```
+
+## 1. Append your first event
+
+Send a `user.message` event to a session called `my-first-session`. The session is created automatically on first append — no separate setup call.
+
+```bash
+curl https://api.tonbo.dev/v1/sessions/my-first-session/events \
+  -H "Authorization: Bearer $TONBO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {
+        "type": "user.message",
+        "content": [
+          {"type": "text", "text": "Generate 20 fibonacci numbers and save to fib.txt"}
+        ]
+      }
+    ]
+  }'
+```
+
+You'll get back a `204 No Content` with the offset of where the next append will go:
+
+```http
+HTTP/1.1 204 No Content
+Stream-Next-Offset: 00000001
+```
+
+<Note>
+You can also POST a bare JSON array — `[{...}, {...}]` — or a single object — `{...}`. All three shapes are equivalent. The `{events: [...]}` wrapper exists for Anthropic Managed Agents compatibility.
+</Note>
+
+## 2. Read the event back
+
+Fetch all events from the session. By default, reads start at offset `-1` (the beginning).
+
+```bash
+curl https://api.tonbo.dev/v1/sessions/my-first-session/events \
+  -H "Authorization: Bearer $TONBO_API_KEY"
+```
+
+Response:
+
+```json
+{
+  "data": [
+    {
+      "id": "evt_01HXYZ123",
+      "offset": "00000000",
+      "created_at": "2026-04-15T14:32:19.421Z",
+      "type": "user.message",
+      "content": [
+        {"type": "text", "text": "Generate 20 fibonacci numbers and save to fib.txt"}
+      ]
+    }
+  ]
+}
+```
+
+Response headers tell you where the stream is now:
+
+```http
+Stream-Next-Offset: 00000001
+Stream-Up-To-Date: true
+```
+
+## 3. Catch up from a specific offset
+
+After a crash, your harness can resume from the exact offset it last processed:
+
+```bash
+curl "https://api.tonbo.dev/v1/sessions/my-first-session/events?offset=00000001" \
+  -H "Authorization: Bearer $TONBO_API_KEY"
+```
+
+Returns an empty `data` array if no new events have been appended since offset `00000001`.
+
+## 4. Tail new events live (SSE)
+
+Open a stream that delivers events as they arrive. Use `offset=now` to start from the tail and only see new events:
+
+```bash
+curl -N "https://api.tonbo.dev/v1/sessions/my-first-session/events?offset=now&live=sse" \
+  -H "Authorization: Bearer $TONBO_API_KEY"
+```
+
+Then in another terminal, append a new event:
+
+```bash
+curl https://api.tonbo.dev/v1/sessions/my-first-session/events \
+  -H "Authorization: Bearer $TONBO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "type": "agent.tool_use",
+      "name": "write_file",
+      "input": {"path": "fib.txt", "content": "0,1,1,2,3,5,8,13,21,34"}
+    }
+  ]'
+```
+
+The first terminal will receive:
+
+```
+event: data
+data: [
+data: {"id":"evt_01HXYZ124","offset":"00000001","type":"agent.tool_use","name":"write_file","input":{...}}
+data: ]
+
+event: control
+data: {"streamNextOffset":"00000002","upToDate":true}
+```
+
+<Tip>
+**No race condition**: unlike SDKs that require you to open the stream *before* appending events, Durable Sessions lets you append first and stream later. Pass `?offset=00000000` to replay from the start, or `?offset=now` to skip history. The server always knows exactly where you want to start.
+</Tip>
+
+## 5. Search across the session
+
+Search for events containing specific keywords using BM25 ranking:
+
+```bash
+curl "https://api.tonbo.dev/v1/sessions/my-first-session/events?q=fibonacci" \
+  -H "Authorization: Bearer $TONBO_API_KEY"
+```
+
+You can combine search with type filtering:
+
+```bash
+curl "https://api.tonbo.dev/v1/sessions/my-first-session/events?q=fibonacci&type=agent.tool_use" \
+  -H "Authorization: Bearer $TONBO_API_KEY"
+```
+
+## What's next
+
+<CardGroup>
+  <Card title="Concepts" href="/concepts">
+    Sessions, events, streams, offsets — the vocabulary you'll see across the API.
+  </Card>
+  <Card title="Migrate from Anthropic" href="/migrate-from-anthropic">
+    Two header changes and you're done.
+  </Card>
+  <Card title="API reference" href="/api">
+    Every endpoint, parameter, and response shape.
+  </Card>
+</CardGroup>

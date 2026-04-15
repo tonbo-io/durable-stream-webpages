@@ -47,6 +47,7 @@ function BlogPostPage({ post }: BlogPostPageProps) {
       <Header
         navItems={[
           { label: "Pricing", href: "/pricing" },
+          { label: "Docs", href: "/docs" },
           { label: "Blogs", href: "/blogs", active: true },
           {
             label: "Projects",
@@ -74,7 +75,7 @@ function BlogPostPage({ post }: BlogPostPageProps) {
           </div>
         </section>
 
-        <article className="blog-detail-shell blog-detail-content">
+        <article className="blog-detail-shell blog-detail-content" data-pagefind-body>
           <MarkdownContent className="blog-detail-prose markdown-content" markdown={post.body} />
         </article>
       </main>

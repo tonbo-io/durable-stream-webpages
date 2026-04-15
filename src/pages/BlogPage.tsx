@@ -16,6 +16,7 @@ function BlogPage() {
       <Header
         navItems={[
           { label: "Pricing", href: "/pricing" },
+          { label: "Docs", href: "/docs" },
           { label: "Blogs", href: "/blogs", active: true },
           {
             label: "Projects",

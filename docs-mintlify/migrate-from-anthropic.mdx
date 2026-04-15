@@ -1,0 +1,142 @@
+---
+slug: migrate-from-anthropic
+title: Migrate from Anthropic Managed Agents
+description: Two header changes and you're done.
+group: Guides
+order: 1
+---
+
+If you already have working code against Anthropic Managed Agents and you want to switch your session storage to Durable Sessions, the migration is almost free. The event format, the endpoint paths, and the request/response shapes are intentionally compatible. **You change two headers and one base URL.**
+
+## What changes
+
+| | Anthropic Managed Agents | Durable Sessions |
+|---|---|---|
+| **Base URL** | `https://api.anthropic.com` | `https://api.tonbo.dev` |
+| **Auth header** | `x-api-key: $ANTHROPIC_API_KEY` | `Authorization: Bearer $TONBO_API_KEY` *(or `x-api-key` — both accepted)* |
+| **Beta header** | `anthropic-beta: managed-agents-2026-04-01` | *(not needed, drop it)* |
+| **Version header** | `anthropic-version: 2023-06-01` | *(not needed, drop it)* |
+| **Send events body** | `{ "events": [{...}] }` | Same — also accepts `[{...}]` and `{...}` |
+| **Read events response** | `{ "data": [...] }` | Same |
+| **SSE stream path** | `GET /v1/sessions/{id}/stream` | Same — and you can also use `GET /v1/sessions/{id}/events?live=sse&offset=now` for explicit offset control |
+
+## What stays the same
+
+Your event handling code is **unchanged**. Every event type Anthropic uses is also a valid Durable Sessions event type:
+
+- `user.message`, `user.interrupt`, `user.tool_confirmation`, `user.custom_tool_result`
+- `agent.message`, `agent.thinking`, `agent.tool_use`, `agent.tool_result`
+- `session.status_running`, `session.status_idle`, `session.status_terminated`
+- `span.model_request_start`, `span.model_request_end`
+
+Content blocks (`{type: "text", text}`, `{type: "image", source}`, etc.) work identically.
+
+## What you give up
+
+Durable Sessions is **just the session layer**. We don't manage agents, environments, or sandboxes. So these endpoints from Anthropic don't have a Durable Sessions equivalent:
+
+- `POST /v1/agents` — agent definitions live in your own code
+- `POST /v1/environments` — your sandbox is whatever you choose (Docker, Firecracker, E2B, your own)
+- The harness loop — bring your own (or use Claude Code, Codex, OpenCode, etc.)
+
+If you were using Anthropic for the *whole* stack including harness execution and sandbox compute, migrating to Durable Sessions means you also need to bring your own harness and sandbox. If you already have those (most platform teams do), you're free of the bundled charges.
+
+## What you gain
+
+These are Durable Sessions features Anthropic Managed Agents doesn't have:
+
+- **Full-text search** — `GET /v1/sessions/{id}/events?q=stripe+webhook` returns BM25-ranked relevant events. Stop stuffing the prompt with the last N events.
+- **Explicit offset-based streaming** — `?offset=now` or `?offset=00000145` eliminates the SSE race condition where you must open the stream before sending events.
+- **Type filtering** — `?type=agent.tool_use` returns only matching events.
+- **Your own S3 bucket** — every event lives in storage you own. Export, audit, walk away anytime.
+- **Open protocol** — built on [Durable Streams](https://github.com/durable-streams/durable-streams/blob/main/PROTOCOL.md), self-hostable and forkable.
+- **Lower price for the session layer alone** — about 1/130th of Anthropic's bundled session-hour fee at the same workload (see [Overview → Why not Anthropic](/overview#why-not-anthropic-managed-agents)).
+
+## Migration in code
+
+### Anthropic Python SDK → Durable Sessions
+
+Set the base URL and API key when constructing the client. **Nothing else changes.**
+
+```python
+from anthropic import Anthropic
+
+# Before
+client = Anthropic()
+# After
+client = Anthropic(
+    base_url="https://api.tonbo.dev",
+    api_key="your-tonbo-api-key",
+)
+
+# Existing send/read/stream code works as-is
+client.beta.sessions.events.send(
+    session_id,
+    events=[
+        {
+            "type": "user.message",
+            "content": [{"type": "text", "text": "..."}],
+        },
+    ],
+)
+```
+
+### Raw curl
+
+```bash
+# Before — Anthropic
+curl https://api.anthropic.com/v1/sessions/$SESSION_ID/events \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: managed-agents-2026-04-01" \
+  -H "content-type: application/json" \
+  -d '{"events":[{"type":"user.message","content":[{"type":"text","text":"..."}]}]}'
+
+# After — Durable Sessions
+curl https://api.tonbo.dev/v1/sessions/$SESSION_ID/events \
+  -H "Authorization: Bearer $TONBO_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"events":[{"type":"user.message","content":[{"type":"text","text":"..."}]}]}'
+```
+
+The body is identical. The two `anthropic-*` headers are gone. The auth header changed from `x-api-key` to `Authorization: Bearer`.
+
+<Note>
+Durable Sessions also accepts the `x-api-key` header for full Anthropic SDK compatibility — meaning if you can't change the header field name (because the Anthropic SDK only sets `x-api-key`), it still works. Just point the SDK at our base URL and pass your Tonbo API key.
+</Note>
+
+## Migrating session metadata
+
+Anthropic's `POST /v1/sessions` request body looks like this:
+
+```json
+{
+  "agent": "agt_abc123",
+  "environment_id": "env_xyz",
+  "title": "My session"
+}
+```
+
+Durable Sessions accepts the **same body unchanged**. The `agent` and `environment_id` fields are stored as opaque session metadata — they don't trigger any harness or sandbox provisioning, but they're preserved for your own reference and queryable via `GET /v1/sessions/{id}`.
+
+You can also send a generalized form with custom metadata:
+
+```json
+{
+  "title": "My session",
+  "metadata": {
+    "agent": "agt_abc123",
+    "environment_id": "env_xyz",
+    "user_email": "alice@example.com",
+    "experiment": "v2"
+  }
+}
+```
+
+## After the migration
+
+- Your Anthropic API key is no longer used for session storage. Keep it if you're still calling the Messages API directly.
+- Run your existing harness against Durable Sessions and watch the events flow into your S3 bucket.
+- Compare cost: a workload that ran $2,400/month on Anthropic Managed Agents typically runs ~$18.50/month on Durable Sessions (you keep your own harness and sandbox compute, of course).
+
+Need help migrating a real workload? [Book a call](https://cal.com/tzu-gwo/hi-from-tonbo) and we'll walk through it together.

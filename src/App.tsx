@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import { getBlogPostBySlug } from "./content/blog";
+import { getDocsPageBySlug } from "./content/docs";
 import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
+import DocsPage from "./pages/DocsPage";
 import HomePage from "./pages/HomePage";
 import PricingPage from "./pages/PricingPage";
-import { BLOG_PATH, getBlogSlugFromPath, getCurrentAppPath, PRICING_PATH } from "./utils/navigation";
+import {
+  BLOG_PATH,
+  DOCS_PATH,
+  getBlogSlugFromPath,
+  getCurrentAppPath,
+  getDocsSlugFromPath,
+  PRICING_PATH,
+} from "./utils/navigation";
 
 type AppProps = {
   initialUrl?: string;
@@ -14,6 +23,8 @@ function App({ initialUrl }: AppProps) {
   const [currentPath, setCurrentPath] = useState(() => getCurrentAppPath(initialUrl));
   const currentBlogSlug = getBlogSlugFromPath(currentPath);
   const currentBlogPost = currentBlogSlug ? getBlogPostBySlug(currentBlogSlug) : undefined;
+  const currentDocsSlug = getDocsSlugFromPath(currentPath);
+  const currentDocsPage = currentDocsSlug !== null ? getDocsPageBySlug(currentDocsSlug) : undefined;
 
   useEffect(() => {
     const handleRouteChange = () => {
@@ -34,8 +45,12 @@ function App({ initialUrl }: AppProps) {
           ? "Blogs | Durable Sessions"
           : currentBlogPost
             ? `${currentBlogPost.title} | Durable Sessions`
-            : "Durable Sessions";
-  }, [currentBlogPost, currentPath]);
+            : currentDocsPage
+              ? `${currentDocsPage.title} | Durable Sessions`
+              : currentPath === DOCS_PATH
+                ? "Docs | Durable Sessions"
+                : "Durable Sessions";
+  }, [currentBlogPost, currentDocsPage, currentPath]);
 
   return (
     <div className="page-shell">
@@ -45,6 +60,8 @@ function App({ initialUrl }: AppProps) {
         <BlogPage />
       ) : currentBlogPost ? (
         <BlogPostPage post={currentBlogPost} />
+      ) : currentDocsPage ? (
+        <DocsPage page={currentDocsPage} />
       ) : (
         <HomePage />
       )}

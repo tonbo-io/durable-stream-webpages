@@ -1,0 +1,61 @@
+---
+slug: overview
+title: Overview
+description: An append-only event log for AI agents — the memory your sandbox can't hold and your context window can't keep.
+group: Get started
+order: 1
+---
+
+**Durable Sessions is an append-only event log for AI agents.** Persist every tool call, message, and error outside the sandbox. Search the past. Resume after crashes.
+
+## Core concepts
+
+| Concept | Description |
+|---|---|
+| **Session** | An append-only event log for one agent run, stored outside any harness or sandbox |
+| **Event** | A typed record (`user.message`, `agent.tool_use`, etc.) with content and a server-assigned offset |
+| **Stream** | The live sequence of events, accessible via catch-up `GET`, long-poll, or SSE |
+| **Offset** | A monotonic, opaque cursor that lets you resume from any exact position |
+
+See [Concepts](/docs/concepts) for the full vocabulary.
+
+## How it works
+
+1. **Append** with `POST /v1/sessions/{id}/events` — every tool call, message, and error becomes an event.
+2. **Read** with `GET` — fetch by offset, type, or query.
+3. **Search** with `?q=...` — BM25-ranked full-text across the session.
+4. **Subscribe** with `?live=sse` — tail new events in real time.
+
+No SDK required. Any HTTP client works. Events live in your own S3 bucket — exportable, auditable, portable.
+
+## When to use it
+
+**Pick Durable Sessions** if you're building a product on top of a coding agent, your sessions need to survive container churn, your runs regularly outgrow a single context window, or you need to audit, debug, or replay past agent decisions in production.
+
+**Skip it** if you're shipping a personal single-user agent — JSON files or SQLite are the right level. Durable Sessions is for platform teams running production workloads, not for individual experiments.
+
+Want the full thesis? [Read the blog post →](/blogs/ghost-outside-the-shell)
+
+## How we differ from Anthropic Managed Agents
+
+- **Any model** — we store what your harness appends, Claude or otherwise.
+- **Session layer only** — no bundled harness or sandbox compute; you pay for storage alone.
+- **Your S3 bucket** — exportable, queryable with your own tools, portable across providers.
+- **Ingest existing sessions** — backfill from Codex CLI, OpenCode, Claude Code, or any source. Managed Agents can't.
+- **Open protocol** — built on [Durable Streams](https://github.com/durable-streams/durable-streams/blob/main/PROTOCOL.md), self-hostable and forkable.
+
+Migration is two header changes — see [Migrate from Anthropic →](/docs/migrate-from-anthropic).
+
+## Next steps
+
+<CardGroup>
+  <Card title="Quickstart" href="/docs/quickstart">
+    Append, read, and subscribe in 5 minutes.
+  </Card>
+  <Card title="Ingest existing sessions" href="/docs/ingest-existing-sessions">
+    Backfill from Codex CLI, OpenCode, or Claude Code.
+  </Card>
+  <Card title="Migrate from Anthropic" href="/docs/migrate-from-anthropic">
+    Drop-in replacement for the session layer.
+  </Card>
+</CardGroup>

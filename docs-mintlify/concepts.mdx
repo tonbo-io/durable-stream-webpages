@@ -1,0 +1,139 @@
+---
+slug: concepts
+title: Concepts
+description: Six terms cover everything Durable Sessions does.
+group: Get started
+order: 3
+---
+
+Six terms cover everything Durable Sessions does. If you understand these, you understand the API.
+
+## Session
+
+A **session** is an append-only event log with a unique ID. It represents one run of one agent — from the first user message to the last tool result.
+
+- Sessions live **outside any harness or sandbox**. When the container running your agent dies, the session survives.
+- Sessions are **created automatically** on first append. You can also `PUT /v1/sessions/{id}` ahead of time to set TTL or metadata.
+- Sessions can hold **arbitrary metadata** as key-value pairs — `agent`, `environment_id`, `user_email`, `experiment`, anything your platform needs.
+- Sessions can be **closed** explicitly when the agent run is done, or **left open indefinitely** for resumption.
+
+A session is *not*:
+
+- ❌ A context window (sessions can grow far beyond what any model holds at once)
+- ❌ A sandbox (sessions are decoupled from the container the agent runs in)
+- ❌ A conversation (a session can span many user turns, multi-agent threads, or fully autonomous runs)
+
+## Event
+
+An **event** is a single typed entry in a session's log. Every event has:
+
+| Field | Description |
+|---|---|
+| `id` | Server-assigned opaque identifier |
+| `offset` | Lexicographically-sortable position in the stream |
+| `created_at` | Server timestamp (RFC 3339) |
+| `type` | Event type, in `{domain}.{action}` format |
+| _payload_ | Type-specific fields (`content`, `name`, `input`, `output`, etc.) |
+
+Events are **immutable** once appended. There is no edit, delete, or update — just append.
+
+### Event type naming
+
+Event types follow `{domain}.{action}`:
+
+- `user.*` — events your client sends to the agent (`user.message`, `user.interrupt`, `user.tool_confirmation`)
+- `agent.*` — events the agent produces (`agent.message`, `agent.thinking`, `agent.tool_use`, `agent.tool_result`)
+- `session.*` — lifecycle status (`session.status_running`, `session.status_idle`, `session.status_terminated`)
+- `span.*` — observability markers (`span.model_request_start`, `span.model_request_end`)
+- `your_app.*` — anything you define for your own platform
+
+The event types in `user.*`, `agent.*`, `session.*`, and `span.*` follow the [Anthropic Managed Agents conventions](https://platform.claude.com/docs/en/managed-agents/events-and-streaming) so events from existing harnesses round-trip without translation. **Custom types are fully supported** — Durable Sessions doesn't validate or restrict the type string.
+
+### Content blocks
+
+For events that carry rich content (messages, tool calls), the payload uses the standard content blocks model:
+
+```json
+{
+  "type": "user.message",
+  "content": [
+    {"type": "text", "text": "Hello"},
+    {"type": "image", "source": {"url": "https://..."}}
+  ]
+}
+```
+
+This format is compatible with Anthropic's Messages API and Claude Managed Agents.
+
+## Stream
+
+The **stream** is the live, append-only sequence of events for a session. The same data is accessible in three modes:
+
+| Mode | URL | Use case |
+|---|---|---|
+| **Catch-up** | `GET /events?offset=00000145` | Resume a worker after crash; replay history; backfill |
+| **Long-poll** | `GET /events?offset=00000145&live=long-poll` | Wait for the next event without holding a connection forever |
+| **SSE** | `GET /events?offset=00000145&live=sse` | Real-time tailing for monitoring, dashboards, multi-agent orchestration |
+
+All three modes accept the same `offset` parameter, with two sentinel values:
+
+- `offset=-1` (or omitted) — start from the very first event in the session
+- `offset=now` — start from the current tail; only see events appended after this point
+
+This explicit-offset design eliminates the **stream race condition** present in many SSE APIs: you never have to "open the stream first, then send the message, hope nothing was lost." Tell the server exactly where you want to start.
+
+## Offset
+
+An **offset** is a lexicographically-sortable string that uniquely identifies a position in a session's event stream.
+
+- **Opaque**: clients must not parse the structure. Today they look like `00000145`, but that's an implementation detail.
+- **Monotonic**: every appended event gets an offset strictly greater than the previous.
+- **Persistent**: an offset returned by the server is valid for the lifetime of the session.
+- **URL-safe**: usable directly in query parameters without escaping.
+
+The server returns offsets in two places:
+
+- **Append response** — `Stream-Next-Offset` HTTP header tells you where the next append will land
+- **Read response** — every event has its own `offset` field
+
+Save the offset of the last event your worker has processed. After a crash, restart with `?offset=<saved_offset>` and you'll see exactly the events you missed and nothing more.
+
+## Harness (not us)
+
+A **harness** is the loop that calls the model, parses tool calls, and decides what to do next. Harnesses are stateless — they need an external place to store the session log so they can be killed and restarted at any time.
+
+Durable Sessions **is not a harness**. We don't decide which model to call, which tools are available, or what to do with a tool result. Bring your own harness — Claude Code, Codex, OpenCode, or one you build yourself — and point it at Durable Sessions for storage.
+
+If you want a managed harness *and* session storage from the same vendor, look at Anthropic Managed Agents. If you already have a harness or want to keep it portable across model providers, you're in the right place.
+
+## Sandbox (not us)
+
+A **sandbox** is the container or VM where your agent executes code, runs shell commands, and edits files. Sandboxes are *cattle, not pets* — when one dies, you replace it.
+
+Durable Sessions **is not a sandbox**. We don't run your agent's code, manage container lifecycles, or expose a filesystem. Whatever execution environment you're using — Docker, Firecracker, E2B, Daytona, or your own — keep it. Durable Sessions is the *log* the agent writes to from inside the sandbox; the log survives the sandbox dying.
+
+## Durable Streams protocol
+
+Durable Sessions speaks the **Durable Streams protocol** — an open, HTTP-based specification for append-only byte streams. Every Durable Sessions endpoint is also a valid Durable Streams endpoint, with a few session-specific extensions (`?q=` for BM25 search, `?type=` for filtering).
+
+Read the [Durable Streams specification](https://github.com/durable-streams/durable-streams/blob/main/PROTOCOL.md) if you want to:
+
+- Implement a client in a language without an SDK
+- Run your own Durable Streams server and migrate to it later
+- Understand how Durable Sessions interacts with idempotent producers, forks, and TTL
+
+You don't need to read the protocol to use Durable Sessions — the [Quickstart](/quickstart) covers everything most users need.
+
+## Not to be confused with
+
+These are the most common mental-model mistakes for new users:
+
+| Don't think of a session as... | Think of it as... |
+|---|---|
+| The agent's prompt history | An external log that *outlives* any single prompt |
+| A row in a database | An append-only stream — like Kafka, not Postgres |
+| The state of a single conversation | A complete record of every action the agent took |
+| Bound to one container | Independent of any container — read it from anywhere |
+| Something that needs to fit in memory | A potentially infinite log, paginated and searchable |
+
+If you remember one thing: **the session is the source of truth, and everything else is cattle**.

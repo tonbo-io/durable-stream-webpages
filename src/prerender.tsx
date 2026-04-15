@@ -1,12 +1,20 @@
 import { renderToString } from "react-dom/server";
 import App from "./App";
 import { getAllBlogPosts, getBlogPostBySlug } from "./content/blog";
-import { BLOG_PATH, BLOG_POST_PREFIX, HOME_PATH, PRICING_PATH } from "./utils/navigation";
+import { getAllDocsPages, getDocsPageBySlug } from "./content/docs";
+import {
+  BLOG_PATH,
+  BLOG_POST_PREFIX,
+  DOCS_PAGE_PREFIX,
+  DOCS_PATH,
+  HOME_PATH,
+  PRICING_PATH,
+} from "./utils/navigation";
 
 const ORIGIN = "https://sessions.tonbo.io";
 const DEFAULT_DESCRIPTION =
   "Persist agent events in remote streams and resume execution for long-running agents.";
-const DEFAULT_OG_IMAGE = `${ORIGIN}/blogs/ghost-outside-the-shell.png`;
+const DEFAULT_OG_IMAGE = `${ORIGIN}/og-default.png`;
 
 type HeadData = {
   title: string;
@@ -66,6 +74,21 @@ function getHeadForUrl(url: string): HeadData {
     }
   }
 
+  if (url === DOCS_PATH || url.startsWith(DOCS_PAGE_PREFIX)) {
+    const slug = url === DOCS_PATH ? "" : url.slice(DOCS_PAGE_PREFIX.length);
+    const page = getDocsPageBySlug(slug);
+
+    if (page) {
+      return {
+        title: `${page.title} | Durable Sessions`,
+        description: page.description ?? DEFAULT_DESCRIPTION,
+        ogType: "website",
+        ogImage: DEFAULT_OG_IMAGE,
+        canonical,
+      };
+    }
+  }
+
   return {
     title: "Durable Sessions",
     description: DEFAULT_DESCRIPTION,
@@ -97,10 +120,17 @@ export async function prerender(data: { url: string }) {
   const html = renderToString(<App initialUrl={data.url} />);
 
   const blogPostLinks = getAllBlogPosts().map((post) => `${BLOG_POST_PREFIX}${post.slug}`);
+  const docsPageLinks = getAllDocsPages().map((page) => `${DOCS_PAGE_PREFIX}${page.slug}`);
 
   return {
     html,
-    links: new Set<string>([PRICING_PATH, BLOG_PATH, ...blogPostLinks]),
+    links: new Set<string>([
+      PRICING_PATH,
+      BLOG_PATH,
+      ...blogPostLinks,
+      DOCS_PATH,
+      ...docsPageLinks,
+    ]),
     head: {
       lang: "en",
       title: head.title,

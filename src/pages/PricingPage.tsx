@@ -54,6 +54,7 @@ function PricingPage() {
       <Header
         navItems={[
           { label: "Pricing", href: "/pricing", active: true },
+          { label: "Docs", href: "/docs" },
           { label: "Blogs", href: "/blogs" },
           {
             label: "Projects",

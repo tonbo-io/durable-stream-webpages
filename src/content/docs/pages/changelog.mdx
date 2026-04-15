@@ -1,0 +1,21 @@
+---
+slug: changelog
+title: Changelog
+description: What's shipped, in reverse chronological order. We ship every two weeks.
+group: Release notes
+order: 1
+---
+
+We ship every two weeks. Each release lands here.
+
+## v0.1.0 — 2026-04-15
+
+**Initial early access launch.**
+
+- Append-only event log for AI agent sessions
+- HTTP API: `POST /v1/sessions/{id}/events` (append), `GET /v1/sessions/{id}/events` (read), `GET /v1/sessions/{id}/events?live=sse` (subscribe)
+- BM25 full-text search across session events
+- Built on the open [Durable Streams](https://github.com/durable-streams/durable-streams/blob/main/PROTOCOL.md) protocol
+- Anthropic Managed Agents API compatibility — drop-in replacement for the session storage layer
+- Storage in your own S3 bucket
+- Early access via [book a call](https://cal.com/tzu-gwo/hi-from-tonbo)

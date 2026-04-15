@@ -1,0 +1,78 @@
+---
+slug: overview
+title: Overview
+description: An append-only event log for AI agents — the memory your sandbox can't hold and your context window can't keep.
+group: Get started
+order: 1
+---
+
+**Durable Sessions is an append-only event log for AI agents** — the memory your sandbox can't hold and your context window can't keep.
+
+## Why you need it
+
+Frontier models get faster, cheaper, and smarter every quarter. What's bottlenecking production coding agents isn't the model — it's the infrastructure around it. Three problems keep coming up:
+
+1. **The context window is too small for long runs.** An agent running for six hours generates more tool calls, messages, and errors than any model can see at once. Compacting the window throws away signal you later need.
+2. **The sandbox dies, and the agent forgets everything.** Containers crash. VMs get recycled. The harness restarts. Without external memory, the agent can't resume from where it left off — and for most teams, "restart from scratch" is unacceptable.
+3. **You can't search the past.** Building context for the next inference call isn't "take the last N events". You need to *search*: by keyword, by event type, by time window. Stuff everything into the prompt and you're paying tokens for noise.
+
+## How it works
+
+Durable Sessions gives every agent run its own **append-only event log**, stored outside the sandbox, queryable from anywhere.
+
+- **Append with `POST`** — every tool call, message, and error flows in as a typed event.
+- **Read with `GET`** — fetch by offset, by type, or the whole log in one request.
+- **Search with `GET ?q=...`** — BM25-ranked full-text across the session, so your harness can pull "the last thing the agent tried about webhooks" in one call.
+- **Subscribe with SSE** — tail a session live for monitoring, debugging, or multi-agent orchestration.
+
+No SDK required. Any language that can make an HTTP request can be a client. Events land in your own S3 bucket; you can export them, migrate them, or walk away with them.
+
+## When to use it
+
+You probably **need** Durable Sessions if:
+
+- ✅ You're **building a product on top of a coding agent** — a platform team running many sessions for many users
+- ✅ Your agent runs need to **survive container churn** in production
+- ✅ Sessions regularly **outgrow a single context window** (hours-long runs, tens of thousands of events)
+- ✅ You need to **audit, debug, or replay** past agent decisions after the fact
+- ✅ You want **ownership over session data** — exportable, queryable with your own tools, portable across providers
+
+You probably **don't** need it if:
+
+- ❌ You're shipping a **personal / single-user agent** (one user, one machine at a time) — JSON files or SQLite are the right level
+- ❌ Your agent runs **fit in a single context window** and you never care about history
+- ❌ Restarting from scratch after a crash is **perfectly acceptable** for your use case
+- ❌ You're building a **throwaway experiment**, not a service with reliability guarantees
+
+The short version: **if your agent is someone else's production dependency, you need durable session storage. If your agent is your own terminal toy, you probably don't.**
+
+## Why not Anthropic Managed Agents
+
+Anthropic's Managed Agents is a good product and the simplest path if you're building a Claude-only agent end-to-end. Here's when you'd pick Durable Sessions instead:
+
+- **You use more than one model.** Managed Agents only works with Claude. We don't care what model you use — we just store what your harness decides to append.
+- **You already have your own harness and sandbox.** Managed Agents bundles session storage, harness execution, and sandbox compute into a single `$0.08 / session-hour` charge. If you run your own harness and sandbox, you're paying for services you don't use. We charge for the session layer alone.
+- **You want your data in your own S3 bucket.** Managed Agents stores session data on Anthropic's infrastructure. You can't export it, query it with your own tools, or take it with you when you switch providers. Durable Sessions lives in a bucket you own.
+- **You care about the economics at scale.** 1,000 agents running 1 hour/day on Anthropic ≈ **$2,400 / month** in session runtime fees alone (before you count tokens). The same workload on Durable Sessions ≈ **$18.50 / month**.
+- **You want an open protocol.** Durable Sessions is built on [Durable Streams](https://github.com/durable-streams/durable-streams/blob/main/PROTOCOL.md) — an open HTTP protocol you can self-host, fork, or reimplement. No vendor lock-in.
+- **You want to ingest sessions you already have.** Anthropic Managed Agents only stores sessions that ran *through* their harness. Durable Sessions accepts events from anywhere — backfill from Codex CLI's JSON files, OpenCode's SQLite database, Claude Code's JSONL transcripts, or any harness you've built. See [Ingest existing sessions →](/ingest-existing-sessions).
+
+If you want a managed, Claude-only, end-to-end solution, pick Anthropic. If you're building platform infrastructure where model choice, cost, ownership, and openness matter, pick us. **Migration is two header changes** — see [Migrate from Anthropic →](/migrate-from-anthropic).
+
+## Where we are
+
+Durable Sessions is in **early access**. We ship every two weeks — see the [changelog](/changelog) for what's new this cycle.
+
+Questions, feedback, or want trial credits? **[Book a call →](https://cal.com/tzu-gwo/hi-from-tonbo)** or email [contact@tonbo.io](mailto:contact@tonbo.io).
+
+<CardGroup>
+  <Card title="Quickstart" href="/quickstart">
+    Append, read, and subscribe to your first session in 5 minutes.
+  </Card>
+  <Card title="Concepts" href="/concepts">
+    The vocabulary: sessions, events, streams, and why the session is not the context window.
+  </Card>
+  <Card title="Read the thesis" href="/blogs/ghost-outside-the-shell">
+    Why we built this and why session decoupling is the right architectural bet.
+  </Card>
+</CardGroup>

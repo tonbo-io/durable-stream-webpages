@@ -67,39 +67,52 @@ function SearchHistorySection() {
           <div className="search-input-shell">
             <div className="search-input-icon" aria-hidden="true" />
             <span className="search-input-text">
-              stripe webhook handler
+              <span className="search-input-typed">stripe webhook handler</span>
               <span className="search-input-cursor" aria-hidden="true" />
             </span>
             <span className="search-input-clear" aria-hidden="true">✕</span>
           </div>
 
-          <p className="search-result-summary">4 events · 2 sessions · 18,402 indexed</p>
+          <div className="search-results-stage">
+            <div className="search-loading-state" aria-hidden="true">
+              <span className="search-loading-label">searching session history</span>
+              <span className="search-loading-dots">
+                <span />
+                <span />
+                <span />
+              </span>
+            </div>
 
-          <div className="search-result-list">
-            {searchResults.map((result) => (
-              <article className="search-result-card" key={result.session}>
-                <div className="search-result-session">
-                  <div className="search-session-badge">SESSION</div>
-                  <p className="search-session-name">{result.session}</p>
-                  <p className="search-session-age">{result.age}</p>
-                </div>
+            <div className="search-results-reveal">
+              <p className="search-result-summary">4 events · 2 sessions · 18,402 indexed</p>
 
-                <div className="search-event-list">
-                  {result.events.map((event) => (
-                    <div className="search-event-row" key={`${result.session}-${event.id}`}>
-                      <div className="search-event-meta">
-                        <span className="search-event-id">{event.id}</span>
-                        <span className={`search-event-kind search-event-kind-${event.tone}`}>
-                          <img className="search-event-kind-icon" src={event.icon} alt="" />
-                          <span>{event.kind}</span>
-                        </span>
-                      </div>
-                      <p className={`search-event-detail search-event-detail-${event.tone}`}>{event.detail}</p>
+              <div className="search-result-list">
+                {searchResults.map((result) => (
+                  <article className="search-result-card" key={result.session}>
+                    <div className="search-result-session">
+                      <div className="search-session-badge">SESSION</div>
+                      <p className="search-session-name">{result.session}</p>
+                      <p className="search-session-age">{result.age}</p>
                     </div>
-                  ))}
-                </div>
-              </article>
-            ))}
+
+                    <div className="search-event-list">
+                      {result.events.map((event) => (
+                        <div className="search-event-row" key={`${result.session}-${event.id}`}>
+                          <div className="search-event-meta">
+                            <span className="search-event-id">{event.id}</span>
+                            <span className={`search-event-kind search-event-kind-${event.tone}`}>
+                              <img className="search-event-kind-icon" src={event.icon} alt="" />
+                              <span>{event.kind}</span>
+                            </span>
+                          </div>
+                          <p className={`search-event-detail search-event-detail-${event.tone}`}>{event.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

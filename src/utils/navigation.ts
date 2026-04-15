@@ -2,6 +2,8 @@ export const HOME_PATH = "/";
 export const PRICING_PATH = "/pricing";
 export const BLOG_PATH = "/blogs";
 export const BLOG_POST_PREFIX = "/blogs/";
+export const DOCS_PATH = "/docs";
+export const DOCS_PAGE_PREFIX = "/docs/";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -31,6 +33,14 @@ export function getCurrentAppPath(pathname?: string) {
     return normalizedPath;
   }
 
+  if (normalizedPath === DOCS_PATH) {
+    return DOCS_PATH;
+  }
+
+  if (normalizedPath.startsWith(DOCS_PAGE_PREFIX) && normalizedPath !== DOCS_PATH) {
+    return normalizedPath;
+  }
+
   return HOME_PATH;
 }
 
@@ -44,6 +54,22 @@ export function getBlogSlugFromPath(path: string) {
   }
 
   return path.slice(BLOG_POST_PREFIX.length) || null;
+}
+
+export function getDocsPagePath(slug: string) {
+  return `${DOCS_PATH}/${slug}`;
+}
+
+export function getDocsSlugFromPath(path: string) {
+  if (path === DOCS_PATH) {
+    return "";
+  }
+
+  if (!path.startsWith(DOCS_PAGE_PREFIX)) {
+    return null;
+  }
+
+  return path.slice(DOCS_PAGE_PREFIX.length) || null;
 }
 
 export function isInternalAppPath(path: string) {

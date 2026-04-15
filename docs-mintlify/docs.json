@@ -1,0 +1,72 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Durable Sessions",
+  "description": "Append-only event log for AI agents — the memory your sandbox can't hold and your context window can't keep.",
+  "colors": {
+    "primary": "#458588",
+    "light": "#83a598",
+    "dark": "#458588"
+  },
+  "appearance": {
+    "default": "dark"
+  },
+  "styling": {
+    "codeblocks": {
+      "theme": {
+        "light": "gruvbox-light-hard",
+        "dark": "gruvbox-dark-hard"
+      }
+    }
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "dark": "/logo-dark.svg",
+    "light": "/logo-light.svg"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get started",
+        "pages": ["overview", "quickstart", "concepts"]
+      },
+      {
+        "group": "Guides",
+        "pages": ["migrate-from-anthropic", "ingest-existing-sessions"]
+      },
+      {
+        "group": "Release notes",
+        "pages": ["changelog"]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      { "label": "Home", "href": "https://sessions.tonbo.io/" },
+      { "label": "Pricing", "href": "https://sessions.tonbo.io/pricing" },
+      { "label": "Blog", "href": "https://sessions.tonbo.io/blogs" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Book demo",
+      "href": "https://cal.com/tzu-gwo/hi-from-tonbo"
+    }
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/tonboio",
+      "github": "https://github.com/tonbo-io",
+      "linkedin": "https://www.linkedin.com/company/104844714"
+    }
+  },
+  "fonts": {
+    "heading": {
+      "family": "IBM Plex Sans",
+      "weight": 600
+    },
+    "body": {
+      "family": "IBM Plex Sans",
+      "weight": 400
+    }
+  }
+}

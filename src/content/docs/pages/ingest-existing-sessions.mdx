@@ -1,0 +1,304 @@
+---
+slug: ingest-existing-sessions
+title: Ingest existing sessions from JSON or SQLite
+description: Backfill Durable Sessions with agent runs you already have on disk — Codex CLI, OpenCode, Claude Code, or anything else.
+group: Guides
+order: 2
+---
+
+If you already have agent runs sitting in JSON files or SQLite databases — from Codex CLI, OpenCode, Claude Code, or your own homegrown harness — you can **backfill them into Durable Sessions** without rerunning the agent.
+
+This is something Anthropic Managed Agents fundamentally cannot do: their session storage is closed and proprietary. Durable Sessions accepts events from any source — live SDK calls, batch imports, or sidecar tailers — because the API is just HTTP POST.
+
+## Why ingest
+
+- **Adopt without rerunning history.** You've been using Codex CLI for months and want to migrate to a managed session layer. Don't rerun your agents — backfill the existing transcripts in minutes.
+- **Centralize across multiple harnesses.** Your team uses Claude Code on laptops, OpenCode in CI, and a custom harness in production. All three drop session data in different formats and locations. Ingest them into Durable Sessions and search across all of them with one query.
+- **Make local agent runs observable.** Coding agents on developer machines write their state to local files. Mirror those into Durable Sessions to enable team-wide debugging, audit trails, and post-mortems.
+- **Preserve runs before a sandbox is recycled.** Capture the session log out of an ephemeral container before it dies, even if the container wasn't using Durable Sessions live.
+
+## The general pattern
+
+Three steps, regardless of source format:
+
+<Steps>
+  <Step title="Read the source">
+    Open the JSON file, SQLite database, JSONL stream, or whatever your harness writes. Iterate over the records.
+  </Step>
+  <Step title="Map to Durable Sessions event format">
+    Each source record becomes one event with a `type` (`user.message`, `agent.message`, `agent.tool_use`, etc.), a payload (`content`, `name`, `input`, `output`), and any metadata you want to preserve.
+  </Step>
+  <Step title="POST in batches to /v1/sessions/{id}/events">
+    Append events in chunks of 100–500 per request. Use a stable `session_id` derived from the source so re-runs of the importer are idempotent.
+  </Step>
+</Steps>
+
+## Example: Codex CLI JSON files
+
+Codex CLI stores each conversation as a JSON file (typically under `~/.codex/sessions/`). Here's a minimal Python importer that walks the directory and POSTs each conversation as a separate Durable Sessions session:
+
+```python
+import json
+import os
+from pathlib import Path
+import httpx
+
+TONBO_API = "https://sessions.tonbo.dev"
+TONBO_KEY = os.environ["TONBO_API_KEY"]
+CODEX_DIR = Path.home() / ".codex" / "sessions"
+
+def map_codex_message(msg: dict) -> dict:
+    """Map a Codex message to a Durable Sessions event."""
+    role = msg.get("role")
+    if role == "user":
+        return {
+            "type": "user.message",
+            "content": [{"type": "text", "text": msg["content"]}],
+        }
+    if role == "assistant":
+        return {
+            "type": "agent.message",
+            "content": [{"type": "text", "text": msg["content"]}],
+        }
+    if role == "tool_call":
+        return {
+            "type": "agent.tool_use",
+            "name": msg["name"],
+            "input": msg.get("args", {}),
+        }
+    if role == "tool_result":
+        return {
+            "type": "agent.tool_result",
+            "content": [{"type": "text", "text": str(msg["content"])}],
+        }
+    return {
+        "type": f"codex.{role}",
+        "content": [{"type": "text", "text": json.dumps(msg)}],
+    }
+
+def import_codex_session(path: Path) -> None:
+    with path.open() as f:
+        data = json.load(f)
+
+    session_id = f"codex-{data['id']}"
+    events = [map_codex_message(m) for m in data.get("messages", [])]
+
+    # Batch in chunks of 200 to stay under request size limits
+    with httpx.Client() as client:
+        for i in range(0, len(events), 200):
+            batch = events[i : i + 200]
+            client.post(
+                f"{TONBO_API}/v1/sessions/{session_id}/events",
+                headers={
+                    "Authorization": f"Bearer {TONBO_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={"events": batch},
+            ).raise_for_status()
+
+    print(f"imported {len(events)} events into session {session_id}")
+
+if __name__ == "__main__":
+    for path in CODEX_DIR.glob("*.json"):
+        import_codex_session(path)
+```
+
+The session is **created automatically on first append**, so no setup call is needed. Use a stable `session_id` derived from the source file (here `codex-{data['id']}`) so re-running the importer doesn't create duplicates — the same offsets get re-written rather than new events appended (with the idempotent producer headers; see [Concepts](/docs/concepts)).
+
+## Example: OpenCode SQLite database
+
+OpenCode writes session state to a local SQLite database. Here's an importer that reads the messages table and ingests:
+
+```python
+import json
+import os
+import sqlite3
+from pathlib import Path
+import httpx
+
+TONBO_API = "https://sessions.tonbo.dev"
+TONBO_KEY = os.environ["TONBO_API_KEY"]
+OPENCODE_DB = Path.home() / ".opencode" / "state.db"
+
+def map_opencode_row(row: sqlite3.Row) -> dict:
+    """Map a single row from opencode messages table to a Durable Sessions event."""
+    role = row["role"]
+    payload_text = row["content"]
+
+    if role == "user":
+        return {
+            "type": "user.message",
+            "content": [{"type": "text", "text": payload_text}],
+        }
+    if role == "assistant":
+        return {
+            "type": "agent.message",
+            "content": [{"type": "text", "text": payload_text}],
+        }
+    if role == "tool":
+        # OpenCode stores tool calls/results as JSON in content
+        try:
+            tool_data = json.loads(payload_text)
+        except json.JSONDecodeError:
+            tool_data = {"raw": payload_text}
+        return {
+            "type": "agent.tool_use",
+            "name": tool_data.get("name", "unknown"),
+            "input": tool_data.get("input", {}),
+        }
+    return {
+        "type": f"opencode.{role}",
+        "content": [{"type": "text", "text": payload_text}],
+    }
+
+def import_opencode() -> None:
+    conn = sqlite3.connect(OPENCODE_DB)
+    conn.row_factory = sqlite3.Row
+
+    sessions = conn.execute("SELECT id, name FROM sessions").fetchall()
+
+    with httpx.Client() as client:
+        for sess in sessions:
+            session_id = f"opencode-{sess['id']}"
+            rows = conn.execute(
+                "SELECT role, content, created_at FROM messages "
+                "WHERE session_id = ? ORDER BY created_at ASC",
+                (sess["id"],),
+            ).fetchall()
+
+            events = [map_opencode_row(r) for r in rows]
+
+            for i in range(0, len(events), 200):
+                batch = events[i : i + 200]
+                client.post(
+                    f"{TONBO_API}/v1/sessions/{session_id}/events",
+                    headers={
+                        "Authorization": f"Bearer {TONBO_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={"events": batch},
+                ).raise_for_status()
+
+            print(f"imported {len(events)} events into {session_id}")
+
+    conn.close()
+
+if __name__ == "__main__":
+    import_opencode()
+```
+
+<Note>
+The exact column names in the OpenCode SQLite schema may differ from the example above — check `sqlite3 ~/.opencode/state.db .schema` and adapt the SQL accordingly. The mapping logic stays the same: one row → one event, with the type derived from the role.
+</Note>
+
+## Example: Claude Code transcripts (JSONL)
+
+Claude Code stores conversation history as JSONL files (one event per line) under `~/.claude/projects/`. Each line is already an event-shaped record, so the importer is shorter:
+
+```python
+import json
+import os
+from pathlib import Path
+import httpx
+
+TONBO_API = "https://sessions.tonbo.dev"
+TONBO_KEY = os.environ["TONBO_API_KEY"]
+CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
+
+def import_jsonl(path: Path) -> None:
+    session_id = f"claude-code-{path.stem}"
+    events: list[dict] = []
+
+    with path.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            # Claude Code records already follow {type, content, ...} shape
+            # close to Anthropic Managed Agents conventions; pass them through.
+            events.append(record)
+
+    with httpx.Client() as client:
+        for i in range(0, len(events), 500):
+            batch = events[i : i + 500]
+            client.post(
+                f"{TONBO_API}/v1/sessions/{session_id}/events",
+                headers={
+                    "Authorization": f"Bearer {TONBO_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={"events": batch},
+            ).raise_for_status()
+
+    print(f"imported {len(events)} events into {session_id}")
+
+if __name__ == "__main__":
+    for path in CLAUDE_PROJECTS.rglob("*.jsonl"):
+        import_jsonl(path)
+```
+
+Because Claude Code's transcript format already follows the Anthropic Managed Agents event conventions, the records pass through with no field mapping.
+
+## Sidecar mode: tail a file in real time
+
+If you don't want to backfill once but instead **mirror new events as they're written** (e.g. follow a `tail -f` of a JSONL file), wrap the import logic in a watcher loop:
+
+```python
+import json
+import os
+import time
+from pathlib import Path
+import httpx
+
+TONBO_API = "https://sessions.tonbo.dev"
+TONBO_KEY = os.environ["TONBO_API_KEY"]
+
+def tail_session(file_path: Path, session_id: str) -> None:
+    with httpx.Client() as client:
+        f = file_path.open()
+        f.seek(0, 2)  # jump to end
+        while True:
+            line = f.readline()
+            if not line:
+                time.sleep(0.5)
+                continue
+
+            record = json.loads(line)
+            client.post(
+                f"{TONBO_API}/v1/sessions/{session_id}/events",
+                headers={
+                    "Authorization": f"Bearer {TONBO_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={"events": [record]},
+            ).raise_for_status()
+
+if __name__ == "__main__":
+    tail_session(
+        Path.home() / ".claude" / "projects" / "my-project" / "session.jsonl",
+        "claude-code-my-project",
+    )
+```
+
+For production use, consider `watchdog` (filesystem events instead of polling) and batching multiple lines into a single POST when activity is bursty.
+
+## Tips for production ingestion
+
+- **Use stable session IDs.** Derive `session_id` from the source (file name, DB primary key, hash of the conversation start time). This makes re-running the importer idempotent at the session level.
+- **Use idempotent producer headers** (`Producer-Id` / `Producer-Epoch` / `Producer-Seq`) when you need exactly-once semantics within a session. See the [Durable Streams protocol](https://github.com/durable-streams/durable-streams/blob/main/PROTOCOL.md) for the full spec.
+- **Batch aggressively.** A single POST with 200 events is dramatically cheaper than 200 individual POSTs. Stay under the request body size limit (typically 1 MB).
+- **Preserve original timestamps** by including them as a `metadata.original_timestamp` field on the event payload. Durable Sessions records its own `created_at` at append time, but the source-of-truth time is whatever the upstream system recorded.
+- **Capture source-specific fields as `metadata`.** Anything that doesn't fit the standard event schema (Codex's `model_id`, OpenCode's `branch_name`, Claude Code's `project_path`) goes into a `metadata` object on the event. You can search and filter on it later.
+
+## Roadmap: official `tonbo ingest` CLI
+
+We're planning a first-class CLI that wraps these patterns:
+
+```bash
+tonbo ingest --from codex-cli --path ~/.codex/sessions/
+tonbo ingest --from opencode --db ~/.opencode/state.db
+tonbo ingest --from claude-code --watch
+```
+
+Until that ships, the Python recipes above are the recommended path. They're a small amount of code and you fully control the field mapping. If you'd like to test-drive the CLI early or contribute a source adapter, [book a call](https://cal.com/tzu-gwo/hi-from-tonbo) — we're shipping early access in two-week cycles and prioritizing source formats by user demand.
