@@ -212,10 +212,19 @@ button {
 
 .header-brand-wordmark-accent {
   color: var(--bg-accent);
+  transition: color 150ms ease;
 }
 
 .header-brand-wordmark-primary {
   color: var(--text-primary);
+  transition: color 150ms ease;
+}
+
+.header-brand:hover .header-brand-wordmark-accent,
+.header-brand:hover .header-brand-wordmark-primary,
+.header-brand:focus-visible .header-brand-wordmark-accent,
+.header-brand:focus-visible .header-brand-wordmark-primary {
+  color: #fe8019;
 }
 
 .nav-links {
