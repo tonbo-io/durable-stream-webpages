@@ -1,18 +1,46 @@
+import alertIcon from "../assets/alert-icon.svg";
+import messageIcon from "../assets/message-icon.svg";
+import toolCallIcon from "../assets/tool call icon.svg";
+
 const searchResults = [
   {
     session: "backend-agent-a1b2",
     age: "5h ago",
     events: [
-      { id: "# 847", kind: "tool_call", tone: "tool", detail: "create webhook endpoint" },
-      { id: "# 851", kind: "message", tone: "message", detail: '"using raw body for verify"' },
+      {
+        id: "# 847",
+        kind: "tool_call",
+        tone: "tool",
+        detail: "create webhook endpoint",
+        icon: toolCallIcon,
+      },
+      {
+        id: "# 851",
+        kind: "message",
+        tone: "message",
+        detail: '"using raw body for verify"',
+        icon: messageIcon,
+      },
     ],
   },
   {
     session: "debug-agent-c3d4",
     age: "3m ago",
     events: [
-      { id: "# 112", kind: "tool_call", tone: "tool", detail: "create webhook endpoint" },
-      { id: "# 115", kind: "error", tone: "error", detail: '"signature verification failed"' },
+      {
+        id: "# 112",
+        kind: "tool_call",
+        tone: "tool",
+        detail: "create webhook endpoint",
+        icon: toolCallIcon,
+      },
+      {
+        id: "# 115",
+        kind: "error",
+        tone: "error",
+        detail: '"signature verification failed"',
+        icon: alertIcon,
+      },
     ],
   },
 ];
@@ -58,7 +86,10 @@ function SearchHistorySection() {
                     <div className="search-event-row" key={`${result.session}-${event.id}`}>
                       <div className="search-event-meta">
                         <span className="search-event-id">{event.id}</span>
-                        <span className={`search-event-kind search-event-kind-${event.tone}`}>{event.kind}</span>
+                        <span className={`search-event-kind search-event-kind-${event.tone}`}>
+                          <img className="search-event-kind-icon" src={event.icon} alt="" />
+                          <span>{event.kind}</span>
+                        </span>
                       </div>
                       <p className={`search-event-detail search-event-detail-${event.tone}`}>{event.detail}</p>
                     </div>
