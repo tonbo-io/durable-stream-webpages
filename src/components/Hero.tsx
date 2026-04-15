@@ -18,7 +18,7 @@ function Hero() {
         </p>
         <div className="hero-actions">
           <a className="button button-terminal button-terminal-primary hero-primary-cta" href="https://cal.com/tzu-gwo/hi-from-tonbo">
-            [ Book a demo ]
+            [ Book demo ]
           </a>
           <a className="hero-secondary-cta" href={buildAppHref(howItWorksPath)} onClick={handleHowItWorksClick}>
             Read the post →

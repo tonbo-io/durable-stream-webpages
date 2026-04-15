@@ -18,7 +18,7 @@ type HeaderProps = {
   className?: string;
 };
 
-function Header({ navItems, ctaHref = "https://cal.com/tzu-gwo/hi-from-tonbo", ctaLabel = "Book Demo", className }: HeaderProps) {
+function Header({ navItems, ctaHref = "https://cal.com/tzu-gwo/hi-from-tonbo", ctaLabel = "Book demo", className }: HeaderProps) {
   const handleLinkClick = (href: string) => (event: React.MouseEvent<HTMLElement>) => {
     if (!isInternalAppPath(href)) {
       return;

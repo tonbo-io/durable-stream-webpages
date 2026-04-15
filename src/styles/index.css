@@ -491,6 +491,7 @@ button {
 .hero-primary-cta {
   min-height: 42px;
   padding-inline: 32px;
+  width: 200px;
 }
 
 .hero-secondary-cta {
@@ -505,6 +506,7 @@ button {
   justify-content: center;
   min-height: 42px;
   padding: 8px 32px;
+  width: 200px;
   transition:
     transform 160ms ease,
     color 160ms ease,

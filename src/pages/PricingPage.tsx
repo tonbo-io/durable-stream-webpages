@@ -27,7 +27,7 @@ const pricingPlans = [
       "No minimum spend",
       "99.99% SLA",
     ],
-    ctaLabel: "[ Book Demo ]",
+    ctaLabel: "[ Book demo ]",
     ctaHref: "https://cal.com/tzu-gwo/hi-from-tonbo",
     ctaVariant: "primary" as const,
   },
@@ -81,7 +81,7 @@ function PricingPage() {
             </ul>
 
             <a className="button button-terminal button-terminal-primary pricing-hero-cta" href="https://cal.com/tzu-gwo/hi-from-tonbo">
-              [ Book Demo ]
+              [ Book demo ]
             </a>
           </div>
         </section>
