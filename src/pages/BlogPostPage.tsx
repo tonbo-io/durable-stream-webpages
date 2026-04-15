@@ -8,7 +8,7 @@ type BlogPostPageProps = {
   post: BlogPost;
 };
 
-const ORIGIN = "https://sessions.tonbo.dev";
+const ORIGIN = "https://sessions.tonbo.io";
 
 function BlogPostPage({ post }: BlogPostPageProps) {
   const handleMetaClick = (event: React.MouseEvent<HTMLAnchorElement>) => {

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sessions.tonbo.dev/sitemap.xml
+Sitemap: https://sessions.tonbo.io/sitemap.xml

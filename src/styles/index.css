@@ -6,6 +6,30 @@
   src: url("/fonts/Iosevka-Light.woff2") format("woff2");
 }
 
+@font-face {
+  font-family: "Iosevka";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Iosevka-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Iosevka";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/Iosevka-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Iosevka";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/Iosevka-Bold.woff2") format("woff2");
+}
+
 :root {
   color-scheme: dark;
   font-synthesis: none;
@@ -169,14 +193,6 @@ button {
   opacity: 1;
 }
 
-.header-brand:hover .header-brand-wordmark-accent,
-.header-brand:focus-visible .header-brand-wordmark-accent {
-  color: #fe8019;
-}
-
-.header-brand-wordmark-accent {
-  transition: color 150ms ease;
-}
 
 .header-brand-divider {
   color: var(--border-muted);
@@ -249,7 +265,7 @@ button {
   background: none;
   border: 0;
   cursor: pointer;
-  font: inherit;
+  font-family: inherit;
   padding: 0;
 }
 
@@ -370,6 +386,7 @@ button {
   border-radius: 1px;
   font-family: var(--font-mono);
   font-size: 14px;
+  font-weight: 500;
   min-width: 118px;
   padding-inline: 24px;
 }

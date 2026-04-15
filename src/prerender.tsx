@@ -3,7 +3,7 @@ import App from "./App";
 import { getAllBlogPosts, getBlogPostBySlug } from "./content/blog";
 import { BLOG_PATH, BLOG_POST_PREFIX, HOME_PATH, PRICING_PATH } from "./utils/navigation";
 
-const ORIGIN = "https://sessions.tonbo.dev";
+const ORIGIN = "https://sessions.tonbo.io";
 const DEFAULT_DESCRIPTION =
   "Persist agent events in remote streams and resume execution for long-running agents.";
 const DEFAULT_OG_IMAGE = `${ORIGIN}/blogs/ghost-outside-the-shell.png`;

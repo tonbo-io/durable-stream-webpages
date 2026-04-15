@@ -21,7 +21,7 @@ function Hero() {
             [ Book a demo ]
           </a>
           <a className="hero-secondary-cta" href={buildAppHref(howItWorksPath)} onClick={handleHowItWorksClick}>
-            Read the thesis →
+            Read the post →
           </a>
         </div>
       </div>
