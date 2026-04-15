@@ -2452,6 +2452,14 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .ingestion-copy-block-secondary {
+    order: 1;
+  }
+
+  .durable-flow-card {
+    order: 2;
+  }
+
   .harness-tile-row {
     justify-content: flex-start;
   }
