@@ -1,12 +1,12 @@
 ---
-title: "Introducing Durable Sessions: Ghost Outside the Shell"
+title: Ghost Outside the Shell
 slug: ghost-outside-the-shell
 date: 2026-04-13
 category: Think Notes
 summary: Our research teams investigate the safety, inner workings, and societal impacts of AI models – so that artificial intelligence has a positive impact as it becomes increasingly capable.
 subtitle: Why the agent's session should outlive its container
 coverImage: /blogs/ghost-outside-the-shell.png
-coverAlt: Introducing Durable Sessions: Ghost Outside the Shell article cover
+coverAlt: Ghost Outside the Shell article cover
 featured: true
 ---
 
